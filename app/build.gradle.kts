@@ -41,7 +41,7 @@ dependencies {
     implementation("androidx.appcompat:appcompat:1.6.1")
     implementation("com.google.android.material:material:1.11.0")
     implementation("androidx.constraintlayout:constraintlayout:2.1.4")
-    implementation("com.spotify.android:auth:0.16.1") // Spotify SDK
+    implementation("com.spotify.android:auth:2.1.2") // Spotify Auth SDK Updated
 
     // Retrofit and Gson
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
@@ -62,7 +62,7 @@ dependencies {
     implementation("io.coil-kt:coil:2.5.0")
 
     // Spotify App Remote SDK
-    implementation("com.spotify.android:app-remote-sdk:0.7.2")
+    implementation("com.spotify.android:app-remote-sdk:0.8.0") // Spotify App Remote SDK Updated
 
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
