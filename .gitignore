@@ -67,3 +67,5 @@ modules.xml
 
 # Windows
 Thumbs.db
+
+.gradle/buildOutputCleanup/
