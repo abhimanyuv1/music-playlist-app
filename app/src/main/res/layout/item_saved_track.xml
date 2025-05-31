@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:padding="12dp"
+    android:gravity="center_vertical">
+
+    <ImageView
+        android:id="@+id/trackAlbumArtImageView"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:scaleType="centerCrop"
+        tools:src="@drawable/ic_album_placeholder"
+        android:contentDescription="Track Album Art"/>
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:layout_marginStart="16dp">
+
+        <TextView
+            android:id="@+id/trackNameTextView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            tools:text="Awesome Track Name"
+            android:textAppearance="?attr/textAppearanceListItem"
+            android:textSize="16sp"
+            android:maxLines="1"
+            android:ellipsize="end"/>
+
+        <TextView
+            android:id="@+id/trackArtistTextView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            tools:text="Artist Name"
+            android:textAppearance="?attr/textAppearanceListItemSecondary"
+            android:textSize="14sp"
+            android:maxLines="1"
+            android:ellipsize="end"/>
+    </LinearLayout>
+
+    <!-- Optional: Add a play button or options menu here -->
+    <!-- <ImageButton
+        android:id="@+id/playTrackButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@drawable/ic_play_arrow"
+        style="?android:attr/borderlessButtonStyle"
+        android:contentDescription="Play Track"/> -->
+
+</LinearLayout>

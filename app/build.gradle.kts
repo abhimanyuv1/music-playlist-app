@@ -57,6 +57,12 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.7.0")
     implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.7.0")
 
+    // Image Loading - Coil
+    implementation("io.coil-kt:coil:2.5.0")
+
+    // Spotify App Remote SDK
+    implementation("com.spotify.android:app-remote-sdk:0.7.2")
+
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
