@@ -1,0 +1,69 @@
+# Built application files
+*.apk
+*.aab
+
+# Files for the ART/Dalvik VM
+*.dex
+
+# Java class files
+*.class
+
+# Generated files
+bin/
+gen/
+out/
+
+# Gradle files
+.gradle/
+build/
+
+# Local configuration files (choose one, or add your own)
+# .idea/workspace.xml - if you don't want to share your IDE workspace configuration
+# .idea/libraries/ - if you don't want to share your IDE library configuration
+local.properties
+
+# Log files
+*.log
+
+# Keystore files
+*.jks
+*.keystore
+
+# Crashlytics files (if you use Firebase Crashlytics)
+com_crashlytics_export_strings.xml
+
+# Profiler data
+*.hprof
+*.snapshot
+
+# Android Studio IDE files
+.idea/caches/
+.idea/gradle.xml
+.idea/misc.xml
+.idea/modules.xml
+.idea/runConfigurations/
+.idea/libraries/
+.idea
+
+# Captured CMake output files
+captures/
+
+# External native build folder generated in Android Studio 2.2 and later
+.externalNativeBuild
+
+# IntelliJ
+*.iml
+modules.xml
+*.ipr
+*.iws
+
+# Eclipse
+.classpath
+.project
+.settings/
+
+# Mac
+.DS_Store
+
+# Windows
+Thumbs.db
