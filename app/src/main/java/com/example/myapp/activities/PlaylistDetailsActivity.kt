@@ -4,7 +4,9 @@ import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
+import android.view.View
 import android.widget.ImageView
+import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -22,15 +24,18 @@ import retrofit2.HttpException
 class PlaylistDetailsActivity : AppCompatActivity() {
 
     private lateinit var playlistNameDetailsTextView: TextView
-    private lateinit var playlistOwnerDetailsTextView: TextView // Added for owner info
+    private lateinit var playlistOwnerDetailsTextView: TextView
     private lateinit var playlistImageDetailsView: ImageView
     private lateinit var playlistTracksRecyclerView: RecyclerView
     private lateinit var playlistTrackAdapter: PlaylistTrackAdapter
+    private lateinit var playlistDetailsLoadingProgressBar: ProgressBar
+    private lateinit var playlistTracksEmptyTextView: TextView
+    private lateinit var playlistDetailsErrorTextView: TextView
 
     private var playlistId: String? = null
-    private var playlistName: String? = null
-    private var playlistImageUrl: String? = null
-    private var playlistOwner: String? = null // Added for owner info
+    // private var playlistName: String? = null // Already set to title
+    // private var playlistImageUrl: String? = null // Already loaded
+    // private var playlistOwner: String? = null // Already displayed
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -41,19 +46,22 @@ class PlaylistDetailsActivity : AppCompatActivity() {
         playlistOwnerDetailsTextView = findViewById(R.id.playlistOwnerDetailsTextView)
         playlistImageDetailsView = findViewById(R.id.playlistImageDetailsView)
         playlistTracksRecyclerView = findViewById(R.id.playlistTracksRecyclerView)
+        playlistDetailsLoadingProgressBar = findViewById(R.id.playlistDetailsLoadingProgressBar)
+        playlistTracksEmptyTextView = findViewById(R.id.playlistTracksEmptyTextView)
+        playlistDetailsErrorTextView = findViewById(R.id.playlistDetailsErrorTextView)
 
         playlistId = intent.getStringExtra("PLAYLIST_ID")
-        playlistName = intent.getStringExtra("PLAYLIST_NAME")
-        playlistImageUrl = intent.getStringExtra("PLAYLIST_IMAGE_URL")
-        playlistOwner = intent.getStringExtra("PLAYLIST_OWNER_NAME") // Retrieve owner
+        val playlistNameFromIntent = intent.getStringExtra("PLAYLIST_NAME")
+        val playlistImageUrlFromIntent = intent.getStringExtra("PLAYLIST_IMAGE_URL")
+        val playlistOwnerFromIntent = intent.getStringExtra("PLAYLIST_OWNER_NAME")
 
-        playlistNameDetailsTextView.text = playlistName ?: "Playlist Details"
-        title = playlistName ?: "Playlist" // Set activity title
-        playlistOwnerDetailsTextView.text = "By ${playlistOwner ?: "Unknown Owner"}"
+        playlistNameDetailsTextView.text = playlistNameFromIntent ?: "Playlist Details"
+        title = playlistNameFromIntent ?: "Playlist"
+        playlistOwnerDetailsTextView.text = "By ${playlistOwnerFromIntent ?: "Unknown Owner"}"
 
 
-        if (!playlistImageUrl.isNullOrEmpty()) {
-            playlistImageDetailsView.load(playlistImageUrl) {
+        if (!playlistImageUrlFromIntent.isNullOrEmpty()) {
+            playlistImageDetailsView.load(playlistImageUrlFromIntent) {
                 placeholder(R.drawable.ic_album_placeholder)
                 error(R.drawable.ic_album_placeholder)
             }
@@ -68,6 +76,8 @@ class PlaylistDetailsActivity : AppCompatActivity() {
         } else {
             Toast.makeText(this, "Playlist ID missing.", Toast.LENGTH_SHORT).show()
             Log.e("PlaylistDetailsActivity", "Playlist ID is null.")
+            playlistDetailsErrorTextView.text = "Playlist ID missing."
+            playlistDetailsErrorTextView.visibility = View.VISIBLE
         }
     }
 
@@ -92,9 +102,17 @@ class PlaylistDetailsActivity : AppCompatActivity() {
 
         if (spotifyToken == null) {
             Toast.makeText(this, "Spotify token not found. Please log in.", Toast.LENGTH_LONG).show()
-            // TODO: Redirect to LoginActivity or handle re-authentication
+            playlistDetailsErrorTextView.text = "Spotify token not found. Please log in via main screen."
+            playlistDetailsErrorTextView.visibility = View.VISIBLE
+            playlistDetailsLoadingProgressBar.visibility = View.GONE
             return
         }
+
+        // Initial UI state for loading tracks
+        playlistDetailsLoadingProgressBar.visibility = View.VISIBLE
+        playlistTracksRecyclerView.visibility = View.GONE
+        playlistTracksEmptyTextView.visibility = View.GONE
+        playlistDetailsErrorTextView.visibility = View.GONE
 
         lifecycleScope.launch {
             try {
@@ -102,16 +120,27 @@ class PlaylistDetailsActivity : AppCompatActivity() {
                 val tracks = playlistTracksPagingObject.items.mapNotNull { it.track }
                 playlistTrackAdapter.updateData(tracks)
                 Log.d("PlaylistDetailsActivity", "Fetched ${tracks.size} tracks for playlist $id")
+
+                if (tracks.isEmpty()) {
+                    playlistTracksEmptyTextView.visibility = View.VISIBLE
+                    playlistTracksRecyclerView.visibility = View.GONE
+                } else {
+                    playlistTracksEmptyTextView.visibility = View.GONE
+                    playlistTracksRecyclerView.visibility = View.VISIBLE
+                }
             } catch (e: HttpException) {
                 Log.e("PlaylistDetailsActivity", "API Error: ${e.code()} ${e.message()}", e)
-                Toast.makeText(this@PlaylistDetailsActivity, "Error fetching playlist tracks: ${e.message()}", Toast.LENGTH_LONG).show()
+                playlistDetailsErrorTextView.text = "Error fetching playlist tracks: ${e.message()}"
+                playlistDetailsErrorTextView.visibility = View.VISIBLE
                 if (e.code() == 401 || e.code() == 403) {
-                    // Token expired or invalid - potentially clear token and redirect to login
-                    Toast.makeText(this@PlaylistDetailsActivity, "Spotify token invalid. Please re-link.", Toast.LENGTH_LONG).show()
+                    Toast.makeText(this@PlaylistDetailsActivity, "Spotify token invalid. Please re-link on main screen.", Toast.LENGTH_LONG).show()
                 }
             } catch (e: Exception) {
                 Log.e("PlaylistDetailsActivity", "Error fetching playlist tracks", e)
-                Toast.makeText(this@PlaylistDetailsActivity, "Could not fetch playlist tracks.", Toast.LENGTH_LONG).show()
+                playlistDetailsErrorTextView.text = "Could not fetch playlist tracks."
+                playlistDetailsErrorTextView.visibility = View.VISIBLE
+            } finally {
+                playlistDetailsLoadingProgressBar.visibility = View.GONE
             }
         }
     }

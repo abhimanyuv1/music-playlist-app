@@ -53,4 +53,38 @@
         app:layout_constraintTop_toBottomOf="@+id/playlistImageDetailsView"
         tools:listitem="@layout/item_playlist_track" />
 
+    <ProgressBar
+        android:id="@+id/playlistDetailsLoadingProgressBar"
+        style="?android:attr/progressBarStyle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="@+id/playlistTracksRecyclerView"
+        app:layout_constraintEnd_toEndOf="@+id/playlistTracksRecyclerView"
+        app:layout_constraintStart_toStartOf="@+id/playlistTracksRecyclerView"
+        app:layout_constraintTop_toTopOf="@+id/playlistTracksRecyclerView" />
+
+    <TextView
+        android:id="@+id/playlistTracksEmptyTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="This playlist is empty."
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="@+id/playlistTracksRecyclerView"
+        app:layout_constraintEnd_toEndOf="@+id/playlistTracksRecyclerView"
+        app:layout_constraintStart_toStartOf="@+id/playlistTracksRecyclerView"
+        app:layout_constraintTop_toTopOf="@+id/playlistTracksRecyclerView"/>
+
+    <TextView
+        android:id="@+id/playlistDetailsErrorTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Failed to load tracks."
+        android:textColor="@android:color/holo_red_dark"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="@+id/playlistTracksRecyclerView"
+        app:layout_constraintEnd_toEndOf="@+id/playlistTracksRecyclerView"
+        app:layout_constraintStart_toStartOf="@+id/playlistTracksRecyclerView"
+        app:layout_constraintTop_toTopOf="@+id/playlistTracksRecyclerView"/>
+
 </androidx.constraintlayout.widget.ConstraintLayout>
