@@ -62,7 +62,7 @@ dependencies {
     implementation("io.coil-kt:coil:2.5.0")
 
     // Spotify App Remote SDK
-    implementation("com.spotify.android:app-remote-sdk:0.8.0") // Spotify App Remote SDK Updated
+    project(":spotify")
 
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
