@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:padding="12dp"
+    android:gravity="center_vertical"
+    android:background="?android:attr/selectableItemBackground">
+
+    <ImageView
+        android:id="@+id/playlistTrackAlbumArtImageView"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:scaleType="centerCrop"
+        tools:src="@drawable/ic_album_placeholder"
+        android:contentDescription="Track Album Art"
+        android:layout_marginEnd="12dp"/>
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/playlistTrackNameTextView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            tools:text="Track Name In Playlist"
+            android:textAppearance="?attr/textAppearanceListItem"
+            android:textSize="16sp"
+            android:maxLines="1"
+            android:ellipsize="end"/>
+
+        <TextView
+            android:id="@+id/playlistTrackArtistTextView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            tools:text="Artist Name - Album Name"
+            android:textAppearance="?attr/textAppearanceListItemSecondary"
+            android:textSize="14sp"
+            android:maxLines="1"
+            android:ellipsize="end"/>
+    </LinearLayout>
+
+    <!-- Optional: Duration TextView or Play Button per track -->
+    <TextView
+        android:id="@+id/playlistTrackDurationTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        tools:text="3:45"
+        android:textSize="12sp"
+        android:layout_marginStart="8dp"/>
+
+</LinearLayout>

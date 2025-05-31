@@ -40,4 +40,35 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="@+id/messageEditText" />
 
+    <LinearLayout
+        android:id="@+id/moodConfirmationLayout"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:visibility="gone"
+        tools:visibility="visible"
+        android:gravity="center"
+        android:paddingTop="4dp"
+        android:paddingBottom="4dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/messageEditText" >
+
+        <Button
+            android:id="@+id/yesMoodButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Yes, that's right!"
+            style="?android:attr/buttonBarButtonStyle"
+            android:layout_marginEnd="8dp"/>
+
+        <Button
+            android:id="@+id/noMoodButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="No, try again"
+            style="?android:attr/buttonBarButtonStyle"
+            android:layout_marginStart="8dp"/>
+    </LinearLayout>
+
 </androidx.constraintlayout.widget.ConstraintLayout>

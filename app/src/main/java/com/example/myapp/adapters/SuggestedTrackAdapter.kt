@@ -6,11 +6,11 @@ import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.example.myapp.R
-
-data class SuggestedTrackDisplay(val title: String, val artist: String)
+import com.example.myapp.models.spotify_api.SpotifyTrackFull // Import the correct model
 
 class SuggestedTrackAdapter(
-    private var tracks: List<SuggestedTrackDisplay>
+    private var tracks: List<SpotifyTrackFull>, // Use SpotifyTrackFull
+    private val onItemClicked: (SpotifyTrackFull) -> Unit // Click listener lambda
 ) : RecyclerView.Adapter<SuggestedTrackAdapter.SuggestedTrackViewHolder>() {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): SuggestedTrackViewHolder {
@@ -21,12 +21,12 @@ class SuggestedTrackAdapter(
 
     override fun onBindViewHolder(holder: SuggestedTrackViewHolder, position: Int) {
         val track = tracks[position]
-        holder.bind(track)
+        holder.bind(track, onItemClicked) // Pass the click listener to bind
     }
 
     override fun getItemCount(): Int = tracks.size
 
-    fun updateData(newTracks: List<SuggestedTrackDisplay>) {
+    fun updateData(newTracks: List<SpotifyTrackFull>) {
         tracks = newTracks
         notifyDataSetChanged()
     }
@@ -35,10 +35,10 @@ class SuggestedTrackAdapter(
         private val trackNameTextView: TextView = itemView.findViewById(R.id.suggestedTrackNameTextView)
         private val trackArtistTextView: TextView = itemView.findViewById(R.id.suggestedTrackArtistTextView)
 
-        fun bind(track: SuggestedTrackDisplay) {
-            trackNameTextView.text = track.title
-            trackArtistTextView.text = track.artist
-            // itemView.setOnClickListener { onItemClicked(track) } // Can add click listener if needed
+        fun bind(track: SpotifyTrackFull, onItemClicked: (SpotifyTrackFull) -> Unit) { // Bind SpotifyTrackFull
+            trackNameTextView.text = track.name
+            trackArtistTextView.text = track.artists.joinToString(", ") { it.name }
+            itemView.setOnClickListener { onItemClicked(track) } // Set the click listener on the item view
         }
     }
 }

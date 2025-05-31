@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".activities.PlaylistDetailsActivity">
+
+    <ImageView
+        android:id="@+id/playlistImageDetailsView"
+        android:layout_width="120dp"
+        android:layout_height="120dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="16dp"
+        android:scaleType="centerCrop"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:srcCompat="@drawable/ic_album_placeholder"
+        android:contentDescription="Playlist Cover Art"/>
+
+    <TextView
+        android:id="@+id/playlistNameDetailsTextView"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:textAppearance="@style/TextAppearance.AppCompat.Headline"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/playlistImageDetailsView"
+        app:layout_constraintTop_toTopOf="@+id/playlistImageDetailsView"
+        tools:text="Playlist Name" />
+
+    <TextView
+        android:id="@+id/playlistOwnerDetailsTextView"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toBottomOf="@id/playlistNameDetailsTextView"
+        app:layout_constraintStart_toStartOf="@id/playlistNameDetailsTextView"
+        app:layout_constraintEnd_toEndOf="@id/playlistNameDetailsTextView"
+        android:layout_marginTop="4dp"
+        tools:text="By Playlist Owner"
+        android:textAppearance="@style/TextAppearance.AppCompat.Small"/>
+
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/playlistTracksRecyclerView"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginTop="16dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/playlistImageDetailsView"
+        tools:listitem="@layout/item_playlist_track" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

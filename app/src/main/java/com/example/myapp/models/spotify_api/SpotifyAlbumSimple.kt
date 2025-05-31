@@ -1,6 +1,10 @@
 package com.example.myapp.models.spotify_api
 
+import android.os.Parcelable
+import kotlinx.parcelize.Parcelize
+
 // Represents a simplified album object as returned by various Spotify API endpoints
+@Parcelize
 data class SpotifyAlbumSimple(
     val id: String,
     val name: String,
@@ -12,4 +16,4 @@ data class SpotifyAlbumSimple(
     val release_date_precision: String?
     // external_urls: Map<String, String>?,
     // href: String? // Link to the full album object
-)
+) : Parcelable

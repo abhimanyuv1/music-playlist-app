@@ -41,11 +41,11 @@ class PlaylistAdapter(
             playlistNameTextView.text = playlist.name
             if (playlist.images.isNotEmpty()) {
                 playlistImageView.load(playlist.images[0].url) {
-                    placeholder(R.drawable.ic_album_placeholder) // Placeholder while loading
-                    error(R.drawable.ic_album_placeholder) // Placeholder on error
+                    placeholder(R.drawable.ic_album_placeholder)
+                    error(R.drawable.ic_album_placeholder)
                 }
             } else {
-                playlistImageView.load(R.drawable.ic_album_placeholder)
+                playlistImageView.setImageResource(R.drawable.ic_album_placeholder) // Use setImageResource for local drawables
             }
             itemView.setOnClickListener { onItemClicked(playlist) }
         }
