@@ -34,11 +34,16 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var playlistsRecyclerView: RecyclerView
     private lateinit var playlistAdapter: PlaylistAdapter
-    private var userPlaylists = mutableListOf<SpotifyPlaylistSimple>()
+    // private var userPlaylists = mutableListOf<SpotifyPlaylistSimple>() // Data now primarily in adapter/cache
 
     private lateinit var savedTracksRecyclerView: RecyclerView
     private lateinit var savedTrackAdapter: SavedTrackAdapter
-    private var userSavedTracks = mutableListOf<SpotifyTrackFull>()
+    // private var userSavedTracks = mutableListOf<SpotifyTrackFull>() // Data now primarily in adapter/cache
+
+    private lateinit var mainLoadingProgressBar: ProgressBar
+    private lateinit var playlistsEmptyTextView: TextView
+    private lateinit var savedTracksEmptyTextView: TextView
+    private lateinit var mainErrorTextView: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -60,6 +65,10 @@ class MainActivity : AppCompatActivity() {
         buttonOpenMusicPlayer = findViewById(R.id.buttonOpenMusicPlayer)
         playlistsRecyclerView = findViewById(R.id.playlistsRecyclerView)
         savedTracksRecyclerView = findViewById(R.id.savedTracksRecyclerView)
+        mainLoadingProgressBar = findViewById(R.id.mainLoadingProgressBar)
+        playlistsEmptyTextView = findViewById(R.id.playlistsEmptyTextView)
+        savedTracksEmptyTextView = findViewById(R.id.savedTracksEmptyTextView)
+        mainErrorTextView = findViewById(R.id.mainErrorTextView)
 
         setupPlaylistRecyclerView()
         setupSavedTracksRecyclerView()
@@ -70,7 +79,16 @@ class MainActivity : AppCompatActivity() {
                 AuthorizationResponse.Type.TOKEN,
                 SpotifyConstants.REDIRECT_URI
             )
-            builder.setScopes(arrayOf("playlist-read-private", "user-library-read", "user-read-email", "user-library-read")) // Ensure user-library-read for saved tracks
+            builder.setScopes(arrayOf(
+                "user-read-email",        // For user profile
+                "playlist-read-private",  // For reading user's private playlists
+                "user-library-read",      // For reading user's saved tracks & potentially audio features if not covered by open
+                "app-remote-control",     // For Spotify App Remote SDK playback control
+                "playlist-modify-public", // To create/modify public playlists
+                "playlist-modify-private" // To create/modify private playlists
+                // "user-top-read" // Example for future use: user's top artists and tracks
+            ))
+            // builder.setShowDialog(true) // Optional: to force the auth dialog to always show
             val request = builder.build()
             AuthorizationClient.openLoginActivity(this, SpotifyConstants.REQUEST_CODE, request)
         }
@@ -87,7 +105,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupPlaylistRecyclerView() {
-        playlistAdapter = PlaylistAdapter(userPlaylists) { playlist ->
+        // Initialize with empty list, data will be loaded
+        playlistAdapter = PlaylistAdapter(emptyList()) { playlist ->
             Log.d("MainActivity", "Clicked on playlist: ${playlist.name}, ID: ${playlist.id}")
             val intent = Intent(this, PlaylistDetailsActivity::class.java).apply {
                 putExtra("PLAYLIST_ID", playlist.id)
@@ -102,7 +121,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupSavedTracksRecyclerView() {
-        savedTrackAdapter = SavedTrackAdapter(userSavedTracks) { track ->
+        // Initialize with empty list
+        savedTrackAdapter = SavedTrackAdapter(emptyList()) { track ->
             Log.d("MainActivity", "Clicked on saved track: ${track.name}")
             val trackUri = track.uri
             if (trackUri.isNullOrEmpty()) {
@@ -119,73 +139,168 @@ class MainActivity : AppCompatActivity() {
 
     private fun fetchSpotifyUserProfile(token: String) {
         lifecycleScope.launch {
+            // This is the primary data loading sequence initiation
+            mainLoadingProgressBar.visibility = View.VISIBLE
+            mainErrorTextView.visibility = View.GONE
+            playlistsRecyclerView.visibility = View.GONE
+            savedTracksRecyclerView.visibility = View.GONE
+            playlistsEmptyTextView.visibility = View.GONE
+            savedTracksEmptyTextView.visibility = View.GONE
+
             try {
                 val user = RetrofitClient.spotifyApiService.getCurrentUserProfile("Bearer $token")
+                UserMusicCache.currentSpotifyUser = user
                 spotifyUserNameTextView.text = "Spotify User: ${user.display_name ?: user.id}"
                 buttonLinkSpotify.text = "Spotify Linked"
                 Log.d("MainActivity", "Spotify User: ${user.display_name}, ID: ${user.id}, Email: ${user.email}")
+
                 fetchUserPlaylists(token)
-                fetchUserSavedTracks(token) // Fetch saved tracks after profile
+                fetchUserSavedTracks(token) // This will also trigger audio features and potentially hide progress bar
+
             } catch (e: HttpException) {
                 Log.e("MainActivity", "Spotify API error (User Profile): ${e.message()}", e)
+                mainErrorTextView.text = "Error loading Spotify profile: ${e.message()}"
+                mainErrorTextView.visibility = View.VISIBLE
+                mainLoadingProgressBar.visibility = View.GONE
                 if (e.code() == 401 || e.code() == 403) {
                     clearSpotifyTokenAndData()
-                } else {
-                    spotifyUserNameTextView.text = "Spotify User: Error fetching user data"
                 }
             } catch (e: Exception) {
                 Log.e("MainActivity", "Error fetching Spotify profile", e)
-                spotifyUserNameTextView.text = "Spotify User: Error fetching user data"
+                mainErrorTextView.text = "Error loading Spotify profile. Please try again."
+                mainErrorTextView.visibility = View.VISIBLE
+                mainLoadingProgressBar.visibility = View.GONE
             }
+            // Note: mainLoadingProgressBar might be hidden by the last call in the sequence (fetchUserSavedTracks/fetchAndCacheAudioFeatures)
         }
     }
 
     private fun fetchUserPlaylists(token: String) {
         lifecycleScope.launch {
+            // playlistsRecyclerView.visibility = View.GONE // Already handled by fetchSpotifyUserProfile initial state
+            // playlistsEmptyTextView.visibility = View.GONE
             try {
                 val playlistsPagingObject = RetrofitClient.spotifyApiService.getCurrentUserPlaylists("Bearer $token")
-                // userPlaylists.clear() // Adapter's list is managed by adapter itself now
-                // userPlaylists.addAll(playlistsPagingObject.items)
-                playlistAdapter.updateData(playlistsPagingObject.items)
-                UserMusicCache.setPlaylists(playlistsPagingObject.items) // Populate cache
-                Log.d("MainActivity", "Fetched ${playlistsPagingObject.items.size} playlists.")
+                val playlists = playlistsPagingObject.items
+                playlistAdapter.updateData(playlists)
+                UserMusicCache.setPlaylists(playlists)
+                Log.d("MainActivity", "Fetched ${playlists.size} playlists.")
+                if (playlists.isEmpty()) {
+                    playlistsEmptyTextView.visibility = View.VISIBLE
+                    playlistsRecyclerView.visibility = View.GONE
+                } else {
+                    playlistsEmptyTextView.visibility = View.GONE
+                    playlistsRecyclerView.visibility = View.VISIBLE
+                }
             } catch (e: HttpException) {
                 Log.e("MainActivity", "Spotify API error (Playlists): ${e.message()}", e)
+                mainErrorTextView.text = (mainErrorTextView.text.toString() + "\nError loading playlists: ${e.message()}").trim()
+                mainErrorTextView.visibility = View.VISIBLE
+                playlistsEmptyTextView.visibility = View.GONE
+                playlistsRecyclerView.visibility = View.GONE
                 if (e.code() == 401 || e.code() == 403) {
-                    clearSpotifyTokenAndData()
-                } else {
-                     Toast.makeText(this@MainActivity, "Error fetching playlists: ${e.message()}", Toast.LENGTH_SHORT).show()
+                    clearSpotifyTokenAndData() // This might hide mainErrorTextView if not careful
                 }
             } catch (e: Exception) {
                 Log.e("MainActivity", "Error fetching user playlists", e)
-                Toast.makeText(this@MainActivity, "Could not fetch playlists.", Toast.LENGTH_SHORT).show()
+                mainErrorTextView.text = (mainErrorTextView.text.toString() + "\nCould not load playlists.").trim()
+                mainErrorTextView.visibility = View.VISIBLE
+                playlistsEmptyTextView.visibility = View.GONE
+                playlistsRecyclerView.visibility = View.GONE
             }
         }
     }
 
     private fun fetchUserSavedTracks(token: String) {
         lifecycleScope.launch {
+            // savedTracksRecyclerView.visibility = View.GONE // Handled by fetchSpotifyUserProfile
+            // savedTracksEmptyTextView.visibility = View.GONE
             try {
                 val savedTracksPagingObject = RetrofitClient.spotifyApiService.getCurrentUserSavedTracks("Bearer $token")
-                userSavedTracks.clear()
-                // We need to map SpotifySavedTrack to SpotifyTrackFull for the adapter
-                val tracks = savedTracksPagingObject.items.map { it.track }
-                // userSavedTracks.clear() // Adapter's list is managed by adapter itself now
-                // userSavedTracks.addAll(tracks)
+                // userSavedTracks.clear() // Not needed as adapter manages its own list now
+                val tracks = savedTracksPagingObject.items.mapNotNull { it.track }
                 savedTrackAdapter.updateData(tracks)
-                UserMusicCache.setSavedTracks(tracks) // Populate cache
-                Log.d("MainActivity", "Fetched ${savedTracksPagingObject.items.size} saved tracks.")
+                UserMusicCache.setSavedTracks(tracks)
+                Log.d("MainActivity", "Fetched ${tracks.size} saved tracks.")
+
+                if (tracks.isEmpty()) {
+                    savedTracksEmptyTextView.visibility = View.VISIBLE
+                    savedTracksRecyclerView.visibility = View.GONE
+                    mainLoadingProgressBar.visibility = View.GONE // Hide if no tracks to fetch features for
+                } else {
+                    savedTracksEmptyTextView.visibility = View.GONE
+                    savedTracksRecyclerView.visibility = View.VISIBLE
+                    val currentToken = getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE).getString("spotify_access_token", null)
+                    if (currentToken != null) {
+                        fetchAndCacheAudioFeatures(tracks, currentToken) // This will hide progress bar
+                    } else {
+                        mainLoadingProgressBar.visibility = View.GONE // Hide if no token for audio features
+                    }
+                }
             } catch (e: HttpException) {
                 Log.e("MainActivity", "Spotify API error (Saved Tracks): ${e.message()}", e)
+                mainErrorTextView.text = (mainErrorTextView.text.toString() + "\nError loading saved tracks: ${e.message()}").trim()
+                mainErrorTextView.visibility = View.VISIBLE
+                savedTracksEmptyTextView.visibility = View.GONE
+                savedTracksRecyclerView.visibility = View.GONE
+                mainLoadingProgressBar.visibility = View.GONE
                  if (e.code() == 401 || e.code() == 403) {
                     clearSpotifyTokenAndData()
-                } else {
-                    Toast.makeText(this@MainActivity, "Error fetching saved tracks: ${e.message()}", Toast.LENGTH_SHORT).show()
                 }
             } catch (e: Exception) {
                 Log.e("MainActivity", "Error fetching saved tracks", e)
-                Toast.makeText(this@MainActivity, "Could not fetch saved tracks.", Toast.LENGTH_SHORT).show()
+                mainErrorTextView.text = (mainErrorTextView.text.toString() + "\nCould not load saved tracks.").trim()
+                mainErrorTextView.visibility = View.VISIBLE
+                savedTracksEmptyTextView.visibility = View.GONE
+                savedTracksRecyclerView.visibility = View.GONE
+                mainLoadingProgressBar.visibility = View.GONE
             }
+        }
+    }
+
+    private fun fetchAndCacheAudioFeatures(tracks: List<SpotifyTrackFull>, token: String) {
+        if (tracks.isEmpty()) {
+            mainLoadingProgressBar.visibility = View.GONE
+            return
+        }
+        val trackIds = tracks.mapNotNull { it.id }
+        if (trackIds.isEmpty()){
+            mainLoadingProgressBar.visibility = View.GONE
+            return
+        }
+        // Keep progress bar visible if it was already visible for initial load
+
+        lifecycleScope.launch {
+            var allBatchesSuccessful = true
+            trackIds.chunked(100).forEach { batchIds ->
+                try {
+                    val response = RetrofitClient.spotifyApiService.getAudioFeaturesForTracks(
+                        "Bearer $token",
+                        batchIds.joinToString(",")
+                    )
+                    val validFeatures = response.audioFeatures.filterNotNull()
+                    if (validFeatures.isNotEmpty()) {
+                        UserMusicCache.cacheAudioFeatures(validFeatures)
+                        Log.d("MainActivity", "Cached ${validFeatures.size} audio features for batch.")
+                    } else {
+                        Log.d("MainActivity", "No valid audio features returned for batch.")
+                    }
+                } catch (e: HttpException) {
+                    allBatchesSuccessful = false
+                    Log.e("MainActivity", "API Error (Audio Features for batch): ${e.code()} ${e.message()}", e)
+                    if (e.code() == 401 || e.code() == 403) {
+                         clearSpotifyTokenAndData()
+                         return@launch
+                    }
+                } catch (e: Exception) {
+                    allBatchesSuccessful = false
+                    Log.e("MainActivity", "Error fetching audio features for batch", e)
+                }
+            }
+            if (!allBatchesSuccessful) {
+                 Toast.makeText(this@MainActivity, "Could not fetch all audio features.", Toast.LENGTH_SHORT).show()
+            }
+            mainLoadingProgressBar.visibility = View.GONE // All main data loading done
         }
     }
 
@@ -194,9 +309,10 @@ class MainActivity : AppCompatActivity() {
         val spotifyToken = sharedPreferences.getString("spotify_access_token", null)
 
         if (spotifyToken != null) {
+            // Initial UI state for loading is set within fetchSpotifyUserProfile now
             fetchSpotifyUserProfile(spotifyToken)
         } else {
-            clearSpotifyTokenAndData() // Ensures UI is reset if no token
+            clearSpotifyTokenAndData()
         }
     }
 
@@ -206,9 +322,18 @@ class MainActivity : AppCompatActivity() {
         editor.apply()
         spotifyUserNameTextView.text = "Spotify User: Not Linked"
         buttonLinkSpotify.text = "Link Spotify Account"
+
+        // Clear data and hide views
         playlistAdapter.updateData(emptyList())
         savedTrackAdapter.updateData(emptyList())
-        UserMusicCache.clearCache() // Clear cache
+        UserMusicCache.clearCache()
+
+        mainLoadingProgressBar.visibility = View.GONE
+        playlistsRecyclerView.visibility = View.GONE
+        savedTracksRecyclerView.visibility = View.GONE
+        playlistsEmptyTextView.visibility = View.GONE
+        savedTracksEmptyTextView.visibility = View.GONE
+        mainErrorTextView.visibility = View.GONE
     }
 
     private fun clearSpotifyToken() { // Kept if needed for more granular control, but clearSpotifyTokenAndData is more comprehensive

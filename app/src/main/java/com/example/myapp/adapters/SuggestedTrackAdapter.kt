@@ -9,9 +9,13 @@ import com.example.myapp.R
 import com.example.myapp.models.spotify_api.SpotifyTrackFull // Import the correct model
 
 class SuggestedTrackAdapter(
-    private var tracks: List<SpotifyTrackFull>, // Use SpotifyTrackFull
+    initialTracks: List<SpotifyTrackFull>, // Use SpotifyTrackFull
     private val onItemClicked: (SpotifyTrackFull) -> Unit // Click listener lambda
 ) : RecyclerView.Adapter<SuggestedTrackAdapter.SuggestedTrackViewHolder>() {
+
+    // Make tracks publicly readable but only modifiable via updateData
+    var tracks: List<SpotifyTrackFull> = initialTracks
+        private set
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): SuggestedTrackViewHolder {
         val view = LayoutInflater.from(parent.context)
