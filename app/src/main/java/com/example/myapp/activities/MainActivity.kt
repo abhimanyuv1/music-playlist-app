@@ -18,6 +18,7 @@ import com.example.myapp.models.spotify_api.SpotifyPlaylistSimple
 import com.example.myapp.models.spotify_api.SpotifyTrackFull
 import com.example.myapp.utils.RetrofitClient
 import com.example.myapp.utils.SpotifyConstants
+import com.example.myapp.utils.UserMusicCache
 import com.spotify.sdk.android.auth.AuthorizationClient
 import com.spotify.sdk.android.auth.AuthorizationRequest
 import com.spotify.sdk.android.auth.AuthorizationResponse
@@ -87,8 +88,14 @@ class MainActivity : AppCompatActivity() {
 
     private fun setupPlaylistRecyclerView() {
         playlistAdapter = PlaylistAdapter(userPlaylists) { playlist ->
-            Log.d("MainActivity", "Clicked on playlist: ${playlist.name}")
-            Toast.makeText(this, "Clicked Playlist: ${playlist.name}", Toast.LENGTH_SHORT).show()
+            Log.d("MainActivity", "Clicked on playlist: ${playlist.name}, ID: ${playlist.id}")
+            val intent = Intent(this, PlaylistDetailsActivity::class.java).apply {
+                putExtra("PLAYLIST_ID", playlist.id)
+                putExtra("PLAYLIST_NAME", playlist.name)
+                putExtra("PLAYLIST_IMAGE_URL", playlist.images.firstOrNull()?.url)
+                putExtra("PLAYLIST_OWNER_NAME", playlist.owner.display_name)
+            }
+            startActivity(intent)
         }
         playlistsRecyclerView.layoutManager = LinearLayoutManager(this)
         playlistsRecyclerView.adapter = playlistAdapter
@@ -96,9 +103,15 @@ class MainActivity : AppCompatActivity() {
 
     private fun setupSavedTracksRecyclerView() {
         savedTrackAdapter = SavedTrackAdapter(userSavedTracks) { track ->
-            Log.d("MainActivity", "Clicked on track: ${track.name}")
-            Toast.makeText(this, "Clicked Track: ${track.name}", Toast.LENGTH_SHORT).show()
-            // TODO: Implement track playback or detail view
+            Log.d("MainActivity", "Clicked on saved track: ${track.name}")
+            val trackUri = track.uri
+            if (trackUri.isNullOrEmpty()) {
+                Toast.makeText(this, "Cannot play this track (missing URI)", Toast.LENGTH_SHORT).show()
+                return@SavedTrackAdapter
+            }
+            val intent = Intent(this, MusicPlayerActivity::class.java)
+            intent.putExtra("TRACK_URI_TO_PLAY", trackUri)
+            startActivity(intent)
         }
         savedTracksRecyclerView.layoutManager = LinearLayoutManager(this)
         savedTracksRecyclerView.adapter = savedTrackAdapter
@@ -131,9 +144,10 @@ class MainActivity : AppCompatActivity() {
         lifecycleScope.launch {
             try {
                 val playlistsPagingObject = RetrofitClient.spotifyApiService.getCurrentUserPlaylists("Bearer $token")
-                userPlaylists.clear()
-                userPlaylists.addAll(playlistsPagingObject.items)
-                playlistAdapter.updateData(userPlaylists)
+                // userPlaylists.clear() // Adapter's list is managed by adapter itself now
+                // userPlaylists.addAll(playlistsPagingObject.items)
+                playlistAdapter.updateData(playlistsPagingObject.items)
+                UserMusicCache.setPlaylists(playlistsPagingObject.items) // Populate cache
                 Log.d("MainActivity", "Fetched ${playlistsPagingObject.items.size} playlists.")
             } catch (e: HttpException) {
                 Log.e("MainActivity", "Spotify API error (Playlists): ${e.message()}", e)
@@ -155,8 +169,11 @@ class MainActivity : AppCompatActivity() {
                 val savedTracksPagingObject = RetrofitClient.spotifyApiService.getCurrentUserSavedTracks("Bearer $token")
                 userSavedTracks.clear()
                 // We need to map SpotifySavedTrack to SpotifyTrackFull for the adapter
-                userSavedTracks.addAll(savedTracksPagingObject.items.map { it.track })
-                savedTrackAdapter.updateData(userSavedTracks)
+                val tracks = savedTracksPagingObject.items.map { it.track }
+                // userSavedTracks.clear() // Adapter's list is managed by adapter itself now
+                // userSavedTracks.addAll(tracks)
+                savedTrackAdapter.updateData(tracks)
+                UserMusicCache.setSavedTracks(tracks) // Populate cache
                 Log.d("MainActivity", "Fetched ${savedTracksPagingObject.items.size} saved tracks.")
             } catch (e: HttpException) {
                 Log.e("MainActivity", "Spotify API error (Saved Tracks): ${e.message()}", e)
@@ -191,6 +208,7 @@ class MainActivity : AppCompatActivity() {
         buttonLinkSpotify.text = "Link Spotify Account"
         playlistAdapter.updateData(emptyList())
         savedTrackAdapter.updateData(emptyList())
+        UserMusicCache.clearCache() // Clear cache
     }
 
     private fun clearSpotifyToken() { // Kept if needed for more granular control, but clearSpotifyTokenAndData is more comprehensive

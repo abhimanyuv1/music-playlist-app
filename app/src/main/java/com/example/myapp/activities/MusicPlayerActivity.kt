@@ -28,7 +28,8 @@ class MusicPlayerActivity : AppCompatActivity() {
     private var currentTrack: Track? = null
 
     // Example Test Track URI (Blinding Lights by The Weeknd)
-    private val testTrackUri = "spotify:track:0VjIjW4GlUZAMYd2vXMi3b" // A more common track
+    // private val testTrackUri = "spotify:track:0VjIjW4GlUZAMYd2vXMi3b" // A more common track - No longer primary way to play
+    private var pendingTrackUriToPlay: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -48,6 +49,15 @@ class MusicPlayerActivity : AppCompatActivity() {
         playPauseButton.isEnabled = false
         nextButton.isEnabled = false
         previousButton.isEnabled = false
+
+        // Check for a track URI passed from another activity
+        val trackUriFromIntent = intent.getStringExtra("TRACK_URI_TO_PLAY")
+        if (trackUriFromIntent != null) {
+            pendingTrackUriToPlay = trackUriFromIntent
+            // Update UI immediately for responsiveness, actual play command in connected()
+            trackTitleTextView.text = "Loading track..."
+            artistNameTextView.text = "" // Will be updated by PlayerState
+        }
 
         setupClickListeners()
     }
@@ -108,10 +118,22 @@ class MusicPlayerActivity : AppCompatActivity() {
                 playPauseButton.setImageResource(R.drawable.ic_play_arrow)
             }
 
-            // TODO: Update album art using Coil: playerState.track.imageUri
-            // albumArtImageView.load(playerState.track.imageUri.raw) { ... }
-            // For now, log image URI
-             Log.d("MusicPlayerActivity", "Track image URI: ${playerState.track.imageUri.raw}")
+            // TODO: Update album art using Coil: playerState.track.imageUri - Replaced with ImagesApi
+            spotifyAppRemote?.imagesApi?.getImage(playerState.track.imageUri, com.spotify.protocol.types.Image.Dimension.LARGE)
+                ?.setResultCallback { bitmap ->
+                    albumArtImageView.setImageBitmap(bitmap)
+                }?.setErrorCallback { throwable ->
+                    Log.e("MusicPlayerActivity", "Error loading album art: ${throwable.message}")
+                    albumArtImageView.setImageResource(R.drawable.ic_album_placeholder)
+                }
+        }
+
+        // Play pending track if any
+        if (pendingTrackUriToPlay != null) {
+            spotifyAppRemote?.playerApi?.play(pendingTrackUriToPlay!!)
+                ?.setResultCallback { Log.d("MusicPlayerActivity", "Playing track from intent: $pendingTrackUriToPlay") }
+                ?.setErrorCallback { throwable -> Log.e("MusicPlayerActivity", "Failed to play track from intent $pendingTrackUriToPlay: ${throwable.message}") }
+            pendingTrackUriToPlay = null // Clear it after attempting to play
         }
     }
 
@@ -134,17 +156,15 @@ class MusicPlayerActivity : AppCompatActivity() {
                     ?.setResultCallback { Log.d("MusicPlayerActivity", "Pause command successful") }
                     ?.setErrorCallback { throwable -> Log.e("MusicPlayerActivity", "Pause failed: ${throwable.message}") }
             } else {
-                // If currentTrack is null (e.g. app just connected, nothing playing yet), play the test track.
-                // Otherwise, resume current track.
-                if (currentTrack == null || currentTrack?.uri == null) {
-                     Log.d("MusicPlayerActivity", "Playing test track URI: $testTrackUri")
-                    spotifyAppRemote?.playerApi?.play(testTrackUri)
-                        ?.setResultCallback { Log.d("MusicPlayerActivity", "Play (test track) command successful") }
-                        ?.setErrorCallback { throwable -> Log.e("MusicPlayerActivity", "Play (test track) failed: ${throwable.message}") }
-                } else {
+                // Only resume if there's a current track loaded (even if paused)
+                if (currentTrack != null) {
                     spotifyAppRemote?.playerApi?.resume()
                         ?.setResultCallback { Log.d("MusicPlayerActivity", "Resume command successful") }
                         ?.setErrorCallback { throwable -> Log.e("MusicPlayerActivity", "Resume failed: ${throwable.message}") }
+                } else {
+                    // Nothing is loaded, and not playing. Button does nothing or could show a message.
+                    Toast.makeText(this, "No track selected or loaded.", Toast.LENGTH_SHORT).show()
+                    Log.d("MusicPlayerActivity", "Play button clicked, but no current track and not playing.")
                 }
             }
             // The PlayerState subscription should update isPlaying and the icon.

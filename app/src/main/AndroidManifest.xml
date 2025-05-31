@@ -31,6 +31,7 @@
         <activity android:name=".activities.ChatActivity" />
         <activity android:name=".activities.MusicPlayerActivity" />
         <activity android:name=".activities.SuggestedTracksActivity" />
+        <activity android:name=".activities.PlaylistDetailsActivity" />
     </application>
 
 </manifest>
