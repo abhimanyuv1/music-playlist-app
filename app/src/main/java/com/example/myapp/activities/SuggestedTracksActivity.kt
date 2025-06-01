@@ -8,6 +8,7 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
+import android.view.View
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
@@ -16,6 +17,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.myapp.R
 import com.example.myapp.adapters.SuggestedTrackAdapter
 import com.example.myapp.models.api_requests.PlaylistCreationRequest
+import com.example.myapp.models.api_requests.AddTracksToPlaylistRequest
 import com.example.myapp.models.spotify_api.SpotifyTrackFull // Import the correct model
 import com.example.myapp.utils.RetrofitClient
 import com.example.myapp.utils.UserMusicCache

@@ -12,6 +12,7 @@ import com.example.myapp.utils.SpotifyConstants
 import com.spotify.android.appremote.api.ConnectionParams
 import com.spotify.android.appremote.api.Connector
 import com.spotify.android.appremote.api.SpotifyAppRemote
+import com.spotify.protocol.types.Image
 import com.spotify.protocol.types.Track
 
 class MusicPlayerActivity : AppCompatActivity() {

@@ -7,15 +7,13 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.EditText
+import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import android.content.Intent
 import android.view.Gravity
-import android.view.View
-import android.widget.Button
-import android.widget.LinearLayout
 import com.example.myapp.R
 import com.example.myapp.models.ChatMessage
 import com.example.myapp.models.spotify_api.SpotifyTrackFull
@@ -324,13 +322,16 @@ class ChatMessageAdapter(private val messages: List<com.example.myapp.models.Cha
         val message = messages[position]
         holder.messageTextView.text = message.text
 
+        val layoutParams = holder.messageTextView.layoutParams as LinearLayout.LayoutParams
+
         if (message.isUserMessage) {
-            holder.messageContainer.gravity = Gravity.END
+            layoutParams.gravity = Gravity.END
             holder.messageTextView.setBackgroundResource(R.drawable.user_message_background)
         } else {
-            holder.messageContainer.gravity = Gravity.START
+            layoutParams.gravity = Gravity.START
             holder.messageTextView.setBackgroundResource(R.drawable.bot_message_background)
         }
+        holder.messageTextView.layoutParams = layoutParams
     }
 
     override fun getItemCount(): Int = messages.size

@@ -16,6 +16,7 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        manifestPlaceholders += mapOf("redirectSchemeName" to "spotify-client", "redirectHostName" to "auth", "appAuthRedirectScheme" to "com.example.myapp")
     }
 
     buildTypes {
@@ -62,7 +63,8 @@ dependencies {
     implementation("io.coil-kt:coil:2.5.0")
 
     // Spotify App Remote SDK
-    project(":spotify")
+    implementation(project(":spotify-app-remote"))
+    implementation("com.google.code.gson:gson:2.6.1")
 
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
